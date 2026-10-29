@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="PSA Caducidad">
+<meta name="theme-color" content="#f2f2f7">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>PSA Caducidad</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+    background: #f2f2f7;
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: env(safe-area-inset-top, 32px) 20px env(safe-area-inset-bottom, 32px);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .window {
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    border-radius: 22px;
+    border: 0.5px solid rgba(0,0,0,0.12);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06);
+    width: 100%;
+    max-width: 360px;
+    overflow: hidden;
+  }
+
+  .titlebar {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px 10px;
+    border-bottom: 0.5px solid rgba(0,0,0,0.08);
+    background: rgba(255,255,255,0.4);
+    gap: 8px;
+  }
+
+  .dots { display: flex; gap: 6px; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .dot-red   { background: #ff5f57; }
+  .dot-amber { background: #febc2e; }
+  .dot-green { background: #28c840; }
+
+  .win-title {
+    flex: 1;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 500;
+    color: #1c1c1e;
+  }
+
+  .scan-btn {
+    width: 30px; height: 30px;
+    background: rgba(0,122,255,0.1);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+    padding: 0;
+    flex-shrink: 0;
+  }
+  .scan-btn:active { background: rgba(0,122,255,0.2); }
+  .scan-btn svg { width: 17px; height: 17px; }
+
+  .body { padding: 24px 20px 20px; }
+
+  .field-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: #8e8e93;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    height: 44px;
+    padding: 0 14px;
+    font-family: inherit;
+    font-size: 24px;
+    font-weight: 300;
+    letter-spacing: 12px;
+    color: #1c1c1e;
+    background: rgba(118,118,128,0.08);
+    border: 0.5px solid transparent;
+    border-radius: 10px;
+    outline: none;
+    text-align: center;
+    transition: background 0.15s, border-color 0.15s;
+    caret-color: #007aff;
+    margin-bottom: 4px;
+  }
+  input::placeholder { color: #c7c7cc; letter-spacing: 6px; font-size: 20px; }
+  input:focus { background: rgba(0,122,255,0.06); border-color: rgba(0,122,255,0.3); }
+  input.err   { background: rgba(255,59,48,0.06); border-color: rgba(255,59,48,0.3); }
+
+  .hint { font-size: 11px; color: #ff3b30; min-height: 18px; padding-left: 2px; margin-bottom: 14px; }
+
+  .btn-calc {
+    width: 100%;
+    height: 42px;
+    background: #007aff;
+    color: #fff;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 500;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .btn-calc:active { transform: scale(0.98); opacity: 0.8; }
+
+  /* Scanner overlay */
+  .scanner-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 100;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+  }
+  .scanner-overlay.active { display: flex; }
+
+  .scanner-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    padding-top: max(16px, env(safe-area-inset-top));
+  }
+
+  .scanner-title { color: white; font-size: 15px; font-weight: 500; }
+
+  .close-btn {
+    background: rgba(255,255,255,0.15);
+    border: none;
+    border-radius: 50%;
+    width: 32px; height: 32px;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    line-height: 1;
+  }
+
+  .scanner-viewport {
+    position: relative;
+    width: 280px; height: 280px;
+    border-radius: 20px;
+    overflow: hidden;
+    margin: 20px 0;
+  }
+
+  #preview {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .scanner-frame {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  /* Esquinas del visor */
+  .corner {
+    position: absolute;
+    width: 24px; height: 24px;
+    border-color: white;
+    border-style: solid;
+    border-width: 0;
+  }
+  .corner-tl { top: 12px; left: 12px; border-top-width: 3px; border-left-width: 3px; border-radius: 4px 0 0 0; }
+  .corner-tr { top: 12px; right: 12px; border-top-width: 3px; border-right-width: 3px; border-radius: 0 4px 0 0; }
+  .corner-bl { bottom: 12px; left: 12px; border-bottom-width: 3px; border-left-width: 3px; border-radius: 0 0 0 4px; }
+  .corner-br { bottom: 12px; right: 12px; border-bottom-width: 3px; border-right-width: 3px; border-radius: 0 0 4px 0; }
+
+  /* Línea de escaneo animada */
+  .scan-line {
+    position: absolute;
+    left: 12px; right: 12px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #007aff, transparent);
+    animation: scanAnim 2s ease-in-out infinite;
+  }
+  @keyframes scanAnim {
+    0%   { top: 12px; opacity: 1; }
+    90%  { top: calc(100% - 14px); opacity: 1; }
+    100% { top: calc(100% - 14px); opacity: 0; }
+  }
+
+  .scanner-hint {
+    color: rgba(255,255,255,0.6);
+    font-size: 13px;
+    text-align: center;
+    padding: 0 30px;
+    line-height: 1.5;
+  }
+
+  .scanner-status {
+    color: #30d158;
+    font-size: 13px;
+    font-weight: 500;
+    margin-top: 8px;
+    min-height: 20px;
+    text-align: center;
+  }
+
+  canvas#qrCanvas { display: none; }
+
+  .divider { height: 0.5px; background: rgba(0,0,0,0.08); margin: 20px 0; }
+  .results { display: none; }
+
+  .row { display: flex; justify-content: space-between; align-items: baseline; padding: 6px 0; }
+  .row-label { font-size: 13px; color: #8e8e93; }
+  .row-val   { font-size: 13px; font-weight: 500; color: #1c1c1e; }
+
+  .discard-card {
+    margin-top: 16px; border-radius: 14px;
+    padding: 14px 16px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .discard-card.ok      { background: rgba(52,199,89,0.10); }
+  .discard-card.warn    { background: rgba(255,159,10,0.10); }
+  .discard-card.expired { background: rgba(255,59,48,0.10); }
+
+  .discard-label { font-size: 12px; font-weight: 500; }
+  .discard-date  { font-size: 17px; font-weight: 600; letter-spacing: -0.3px; text-transform: capitalize; }
+
+  .ok .discard-label, .ok .discard-date         { color: #1a7f37; }
+  .warn .discard-label, .warn .discard-date     { color: #a05c00; }
+  .expired .discard-label, .expired .discard-date { color: #c0392b; }
+
+  .status-line { font-size: 11px; color: #8e8e93; text-align: center; margin-top: 10px; }
+
+  .btn-reset {
+    display: block; width: 100%; height: 36px; margin-top: 14px;
+    background: none; border: 0.5px solid rgba(0,0,0,0.12);
+    border-radius: 10px; font-family: inherit; font-size: 13px; color: #007aff; cursor: pointer;
+  }
+  .btn-reset:active { background: rgba(0,122,255,0.06); }
+</style>
+</head>
+<body>
+
+<!-- Ventana principal -->
+<div class="window">
+  <div class="titlebar">
+    <div class="dots">
+      <div class="dot dot-red"></div>
+      <div class="dot dot-amber"></div>
+      <div class="dot dot-green"></div>
+    </div>
+    <div class="win-title">Caducidad PSA</div>
+    <button class="scan-btn" onclick="openScanner()" title="Escanear código">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 7V5a2 2 0 0 1 2-2h2"/>
+        <path d="M17 3h2a2 2 0 0 1 2 2v2"/>
+        <path d="M21 17v2a2 2 0 0 1-2 2h-2"/>
+        <path d="M7 21H5a2 2 0 0 1-2-2v-2"/>
+        <line x1="7" y1="12" x2="17" y2="12"/>
+      </svg>
+    </button>
+  </div>
+  <div class="body">
+    <div class="field-label">Número (9D)</div>
+    <input type="text" id="inp" maxlength="4" placeholder="0000" inputmode="numeric" autocomplete="off">
+    <div class="hint" id="hint"></div>
+    <button class="btn-calc" onclick="calc()">Calcular</button>
+
+    <div class="results" id="res">
+      <div class="divider"></div>
+      <div class="row"><span class="row-label">Año de producción</span><span class="row-val" id="rAnio"></span></div>
+      <div class="row"><span class="row-label">Semana de producción</span><span class="row-val" id="rSem"></span></div>
+      <div class="row"><span class="row-label">Fecha de producción</span><span class="row-val" id="rProd"></span></div>
+      <div class="discard-card" id="dcard">
+        <span class="discard-label">Desechar a partir de</span>
+        <span class="discard-date" id="ddate"></span>
+      </div>
+      <div class="status-line" id="status"></div>
+      <button class="btn-reset" onclick="reset()">Nueva consulta</button>
+    </div>
+  </div>
+</div>
+
+<!-- Scanner overlay -->
+<div class="scanner-overlay" id="scannerOverlay">
+  <div class="scanner-header">
+    <span class="scanner-title">Escanear código (9D)</span>
+    <button class="close-btn" onclick="closeScanner()">✕</button>
+  </div>
+  <div class="scanner-viewport">
+    <video id="preview" playsinline autoplay muted></video>
+    <div class="scanner-frame">
+      <div class="corner corner-tl"></div>
+      <div class="corner corner-tr"></div>
+      <div class="corner corner-bl"></div>
+      <div class="corner corner-br"></div>
+      <div class="scan-line"></div>
+    </div>
+  </div>
+  <p class="scanner-hint">Apunta la cámara al código de barras o QR de la etiqueta PSA</p>
+  <div class="scanner-status" id="scanStatus"></div>
+  <canvas id="qrCanvas"></canvas>
+</div>
+
+<script>
+const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+function weekToDate(y,w){const d=new Date(y,0,1),dow=d.getDay()||7,mon1=new Date(y,0,dow<=4?2-dow:9-dow),r=new Date(mon1);r.setDate(mon1.getDate()+(w-1)*7);return r;}
+function addMonths(d,m){const r=new Date(d);r.setMonth(r.getMonth()+m);return r;}
+function fmt(d){return d.getDate().toString().padStart(2,'0')+'/'+(d.getMonth()+1).toString().padStart(2,'0')+'/'+d.getFullYear();}
+function fmtMY(d){return MESES[d.getMonth()]+' '+d.getFullYear();}
+
+function extract9D(raw) {
+  // Busca 4 dígitos consecutivos donde los últimos 2 sean semana válida (01-53)
+  const matches = raw.match(/\d{4,}/g);
+  if (!matches) return null;
+  for (const m of matches) {
+    for (let i = 0; i <= m.length - 4; i++) {
+      const chunk = m.substring(i, i + 4);
+      const sem = parseInt(chunk.slice(2));
+      if (sem >= 1 && sem <= 53) return chunk;
+    }
+  }
+  return null;
+}
+
+function calc(code) {
+  const v = code !== undefined ? code : document.getElementById('inp').value.trim();
+  const hint = document.getElementById('hint'), inp = document.getElementById('inp');
+  if (!/^\d{4}$/.test(v)) {
+    inp.classList.add('err'); hint.textContent = 'Introduce 4 dígitos (ej: 2324)';
+    document.getElementById('res').style.display = 'none'; return;
+  }
+  const sem = parseInt(v.slice(2));
+  if (sem < 1 || sem > 53) {
+    inp.classList.add('err'); hint.textContent = 'La semana debe estar entre 01 y 53';
+    document.getElementById('res').style.display = 'none'; return;
+  }
+  inp.classList.remove('err'); hint.textContent = '';
+  const anio = 2000 + parseInt(v.slice(0,2)), prod = weekToDate(anio,sem), caduc = addMonths(prod,18), hoy = new Date();
+  document.getElementById('rAnio').textContent = anio;
+  document.getElementById('rSem').textContent = 'Semana ' + sem;
+  document.getElementById('rProd').textContent = fmt(prod);
+  document.getElementById('ddate').textContent = fmtMY(caduc);
+  const mr = (caduc.getFullYear()-hoy.getFullYear())*12+(caduc.getMonth()-hoy.getMonth());
+  const card = document.getElementById('dcard');
+  card.className = 'discard-card';
+  if (caduc < hoy) { card.classList.add('expired'); document.getElementById('status').textContent = 'Este PSA ha caducado.'; }
+  else if (mr <= 3) { card.classList.add('warn'); document.getElementById('status').textContent = 'Caduca en menos de '+mr+' mes'+(mr===1?'':'es')+'.'; }
+  else { card.classList.add('ok'); document.getElementById('status').textContent = mr+' meses restantes.'; }
+  document.getElementById('res').style.display = 'block';
+}
+
+function reset() {
+  document.getElementById('inp').value = '';
+  document.getElementById('inp').classList.remove('err');
+  document.getElementById('hint').textContent = '';
+  document.getElementById('res').style.display = 'none';
+  document.getElementById('inp').focus();
+}
+
+document.getElementById('inp').addEventListener('keydown', e => { if (e.key === 'Enter') calc(); });
+document.getElementById('inp').addEventListener('input', function() { this.value = this.value.replace(/\D/g,''); });
+
+// ── SCANNER ──────────────────────────────────────────
+let stream = null, rafId = null, lastScan = 0;
+
+async function openScanner() {
+  const overlay = document.getElementById('scannerOverlay');
+  overlay.classList.add('active');
+  document.getElementById('scanStatus').textContent = '';
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+    });
+    const video = document.getElementById('preview');
+    video.srcObject = stream;
+    video.play();
+    video.addEventListener('loadedmetadata', startQRLoop, { once: true });
+  } catch(e) {
+    document.getElementById('scanStatus').textContent = 'No se pudo acceder a la cámara.';
+  }
+}
+
+function startQRLoop() {
+  const video = document.getElementById('preview');
+  const canvas = document.getElementById('qrCanvas');
+  const ctx = canvas.getContext('2d');
+
+  function tick() {
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0);
+      const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const now = Date.now();
+      if (now - lastScan > 300) {
+        lastScan = now;
+        // Intenta QR
+        const qr = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+        if (qr) {
+          const found = extract9D(qr.data);
+          if (found) { onCodeFound(found); return; }
+        }
+        // Intenta leer dígitos directamente si el código de barras es numérico
+        // (jsQR no lee EAN, pero detectamos si el valor escaneado ya son dígitos)
+        // Para EAN/Code128 usamos la misma librería como fallback de texto
+      }
+    }
+    rafId = requestAnimationFrame(tick);
+  }
+  rafId = requestAnimationFrame(tick);
+}
+
+function onCodeFound(code) {
+  closeScanner();
+  document.getElementById('inp').value = code;
+  document.getElementById('scanStatus').textContent = '';
+  setTimeout(() => calc(code), 200);
+}
+
+function closeScanner() {
+  const overlay = document.getElementById('scannerOverlay');
+  overlay.classList.remove('active');
+  if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+}
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+</script>
+</body>
+</html>
