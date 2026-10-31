@@ -900,6 +900,14 @@ El equipo de ${d.tienda}`
   $("psaCodigo").addEventListener("keydown", e => { if (e.key === "Enter") calcularPsa(); });
   $("psaCodigo").addEventListener("input", function () { this.value = this.value.replace(/\D/g, ""); });
 
+  // Un solo menú abierto a la vez
+  document.querySelectorAll("aside details").forEach(d => {
+    d.addEventListener("toggle", () => {
+      if (!d.open) return;
+      document.querySelectorAll("aside details").forEach(o => { if (o !== d) o.open = false; });
+    });
+  });
+
   crearTiendas();
   crearMenu();
   seleccionar(tipos[0]);
