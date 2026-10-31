@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 """Rellena los documentos de transporte Basel (kbb.pdf, rc.pdf).
 
-Escribe la fecha junto al "Date:" de abajo (punto 14), la cantidad debajo de
-"Quantity of equipment" (punto 13) y marca con una X las casillas del punto 7.
+Escribe el nombre (a mitad del documento y al final, según la tienda), la fecha
+junto al "Date:" de abajo, la cantidad debajo de "Quantity of equipment"
+(punto 13) y marca con una X las casillas del punto 7.
 Las posiciones se localizan leyendo el propio PDF, así que sirve para ambos.
 Nunca sobrescribe el original: guarda <nombre>_relleno_<fecha>.pdf.
 
 Uso:
   python3 rellenar_pdf.py archivos/kbb.pdf archivos/rc.pdf \
-      --cantidad 3 --casillas smart,accesorio [--fecha 29/10/2026] [--salida carpeta]
+      --cantidad 3 --casillas smart,accesorio --tienda elche [--fecha 29/10/2026] [--salida carpeta]
 
 Casillas: smart, componente, accesorio, ordenador
+Tienda: elche (Daniel M.) o alicante (Juan S.)
 Requiere: pip install pypdf reportlab pdfplumber
 """
 import argparse
@@ -25,6 +27,8 @@ from pypdf.generic import ArrayObject, NameObject
 from reportlab.pdfgen import canvas
 
 CASILLAS = ["smart", "componente", "accesorio", "ordenador"]  # orden de arriba abajo
+TIENDAS = {"elche": "Daniel M.", "alicante": "Juan S."}
+NOMBRES_PREVIOS = {"Daniel M.", "Juan S.S.", "Juan S."}
 PATRON_FECHA = re.compile(r"\d{1,2}/\d{1,2}/\d{2,4}")
 
 
@@ -53,8 +57,18 @@ def localizar(ruta):
         cajas = [cajas[k] for k in sorted(cajas)]
         if len(cajas) != 4:
             raise SystemExit(f"{ruta}: esperaba 4 casillas en el punto 7, hay {len(cajas)}")
+        # nombres ya escritos como anotación (mitad y final del documento)
+        nombres = []
+        for a in PdfReader(ruta).pages[0].get("/Annots") or []:
+            a = a.get_object()
+            if a.get("/Subtype") == "/FreeText" and str(a.get("/Contents") or "").strip() in {"Daniel M.", "Juan S.S."}:
+                x0, y0 = float(a["/Rect"][0]), float(a["/Rect"][1])
+                nombres.append((x0, y0))
+        nombres = sorted(set(nombres), key=lambda t: -t[1])
+        mitad, final = nombres[0], nombres[-1]
         return {
             "alto": alto,
+            "nombres": [(mitad[0] + 1, mitad[1] + 3.5), (final[0] + 1, final[1] + 3.5)],
             "fecha": (fecha["x1"] + 6, alto - fecha["bottom"] + 1),
             "cantidad": ((cant["x0"] + equip["x1"]) / 2,
                          alto - (equip["bottom"] + cumul["top"]) / 2 - 5),
@@ -63,13 +77,14 @@ def localizar(ruta):
 
 
 def quitar_fechas_antiguas(pagina):
-    """Elimina anotaciones con fechas de rellenos anteriores (y su recuadro)."""
+    """Elimina anotaciones con fechas y nombres de rellenos anteriores (y su recuadro)."""
     annots = pagina.get("/Annots")
     if not annots:
         return
     lista = [a.get_object() for a in annots]
     viejas = [a for a in lista if a.get("/Subtype") == "/FreeText"
-              and PATRON_FECHA.search(str(a.get("/Contents") or ""))]
+              and (PATRON_FECHA.search(str(a.get("/Contents") or ""))
+                   or str(a.get("/Contents") or "").strip() in NOMBRES_PREVIOS)]
 
     def solapa(a, b):
         ax0, ay0, ax1, ay1 = [float(v) for v in a["/Rect"]]
@@ -84,7 +99,7 @@ def quitar_fechas_antiguas(pagina):
         r for r, a in zip(annots, lista) if id(a) not in quitar)
 
 
-def rellenar(ruta, fecha, cantidad, casillas, salida):
+def rellenar(ruta, fecha, cantidad, casillas, tienda, salida):
     pos = localizar(ruta)
     lector = PdfReader(ruta)
     pagina = lector.pages[0]
@@ -92,6 +107,10 @@ def rellenar(ruta, fecha, cantidad, casillas, salida):
 
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=(ancho, pos["alto"]))
+    c.setFont("Helvetica", 10)
+    c.setFont("Helvetica", 8)  # más pequeño para no pisar "Function:"
+    for x, y in pos["nombres"]:
+        c.drawString(x - 1, y, TIENDAS[tienda])
     c.setFont("Helvetica", 10)
     c.drawString(*pos["fecha"], fecha)
     c.setFont("Helvetica-Bold", 14)
@@ -120,6 +139,7 @@ def main():
     ap.add_argument("pdfs", nargs="+")
     ap.add_argument("--fecha", default=datetime.date.today().strftime("%d/%m/%Y"))
     ap.add_argument("--cantidad", required=True)
+    ap.add_argument("--tienda", required=True, choices=sorted(TIENDAS))
     ap.add_argument("--casillas", default="", help=",".join(CASILLAS))
     ap.add_argument("--salida", help="carpeta destino (por defecto, junto al original)")
     a = ap.parse_args()
@@ -129,7 +149,7 @@ def main():
             raise SystemExit(f"Casilla desconocida: {s}. Opciones: {', '.join(CASILLAS)}")
     for ruta in a.pdfs:
         salida = Path(a.salida) if a.salida else Path(ruta).parent
-        print(rellenar(ruta, a.fecha, a.cantidad, casillas, salida))
+        print(rellenar(ruta, a.fecha, a.cantidad, casillas, a.tienda, salida))
 
 
 if __name__ == "__main__":
