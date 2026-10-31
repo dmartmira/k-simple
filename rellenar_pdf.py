@@ -66,10 +66,13 @@ def localizar(ruta):
                 nombres.append((x0, y0))
         nombres = sorted(set(nombres), key=lambda t: -t[1])
         mitad, final = nombres[0], nombres[-1]
+        # misma línea base que la etiqueta "Name:" (los dos últimos "Name:" del documento)
+        etiquetas = sorted((w for w in palabras if w["text"] == "Name:"), key=lambda w: w["top"])[-2:]
+        bases = [alto - w["bottom"] + 0.22 * (w["bottom"] - w["top"]) for w in etiquetas]
         return {
             "alto": alto,
-            "nombres": [(mitad[0] + 1, mitad[1] + 3.5), (final[0] + 1, final[1] + 3.5)],
-            "fecha": (fecha["x1"] + 6, alto - fecha["bottom"] + 1),
+            "nombres": [(mitad[0], bases[0]), (final[0], bases[1])],
+            "fecha": (fecha["x1"] + 6, alto - fecha["bottom"] + 0.22 * (fecha["bottom"] - fecha["top"])),
             "cantidad": ((cant["x0"] + equip["x1"]) / 2,
                          alto - (equip["bottom"] + cumul["top"]) / 2 - 5),
             "casillas": [(c["x0"], alto - c["bottom"], c["width"]) for c in cajas],
@@ -110,7 +113,7 @@ def rellenar(ruta, fecha, cantidad, casillas, tienda, salida):
     c.setFont("Helvetica", 10)
     c.setFont("Helvetica", 8)  # más pequeño para no pisar "Function:"
     for x, y in pos["nombres"]:
-        c.drawString(x - 1, y, TIENDAS[tienda])
+        c.drawString(x, y, TIENDAS[tienda])
     c.setFont("Helvetica", 10)
     c.drawString(*pos["fecha"], fecha)
     c.setFont("Helvetica-Bold", 14)
