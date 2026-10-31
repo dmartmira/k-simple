@@ -132,10 +132,12 @@
   }
   input::placeholder, textarea::placeholder { color: var(--color-muted); }
   input:focus, textarea:focus, select:focus { outline: 1px solid var(--color-navy); outline-offset: 0; }
-  label.ancho { grid-column: 1 / -1; }
-  .fila-pieza { grid-column: 1 / -1; display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
-  .fila-pieza label { flex: 1 1 160px; }
-  .boton.mas { padding: 4px 12px; font-size: 16px; line-height: 1; }
+  label.ancho { grid-column: auto; }
+  label input, label select, label textarea { width: 100%; }
+  input:not([type=checkbox]):not([type=date]), select { height: 36px; }
+  .fila-pieza { display: contents; }
+  .fila-pieza .mas { justify-self: start; align-self: end; }
+  .boton.mas { width: 36px; height: 36px; padding: 0; border-radius: 50%; font-size: 18px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
 
   .tarjeta {
     background: transparent;
@@ -273,6 +275,16 @@
     { id: "cliente", etiqueta: "Nombre del cliente", ejemplo: "Laura" },
     { id: "equipo", etiqueta: "Dispositivo", ejemplo: "iPhone 13" },
     { id: "orden", etiqueta: "Nº de reparación", ejemplo: "R-12345" }
+  ];
+
+  const CAMPOS_PIEZA_SOLICITUD = [
+    { id: "numeroParte", etiqueta: "Número de parte", ejemplo: "661-00000" },
+    { id: "pieza", etiqueta: "Pieza", ejemplo: "Pantalla" },
+    { id: "cantidad", etiqueta: "Cantidad de unidades", ejemplo: "1" }
+  ];
+  const CAMPOS_PIEZA_PEDIDO = [
+    { id: "pieza", etiqueta: "Pieza", ejemplo: "Pantalla" },
+    { id: "cantidad", etiqueta: "Cantidad", ejemplo: "1" }
   ];
 
   const tipos = [
@@ -427,19 +439,19 @@ El equipo de ${d.tienda}`,
       id: "pedidoAlmacen",
       nombre: "Pedido de Almacén",
       interno: true,
-      descripcion: "Pedido de almacén para pedir una pieza.",
+      piezas: true,
+      camposPieza: CAMPOS_PIEZA_PEDIDO,
+      descripcion: "Pedido de almacén para pedir una o varias piezas.",
       campos: [
         { id: "referencia", etiqueta: "Referencia", ejemplo: "REF-0001", ancho: true },
-        { id: "numeroPedido", etiqueta: "Nº Pedido", ejemplo: "PED-0001" },
-        { id: "pieza", etiqueta: "Pieza", ejemplo: "Pantalla", ancho: true },
-        { id: "cantidad", etiqueta: "Cantidad", ejemplo: "1" }
+        { id: "numeroPedido", etiqueta: "Nº Pedido", ejemplo: "PED-0001" }
       ],
       texto: d => `Pedido de almacén
 ------
 Referencia: ${d.referencia}
 Nº Pedido: ${d.numeroPedido}
-Pieza: ${d.pieza}
-Cantidad: ${d.cantidad}
+
+${d.lista}
 
 Saludos.
 El equipo de ${d.tienda}`,
@@ -457,6 +469,7 @@ El equipo de ${d.tienda}`,
       nombre: "Solicitud pieza",
       interno: true,
       piezas: true,
+      camposPieza: CAMPOS_PIEZA_SOLICITUD,
       descripcion: "Solicitud de piezas a la delegación de Elche.",
       campos: [],
       texto: d => `Hola,
@@ -619,6 +632,7 @@ El equipo de ${d.tienda}`
     } else {
       input = document.createElement(c.multilinea ? "textarea" : "input");
       if (c.multilinea) input.rows = 3;
+      else input.maxLength = 40;
       input.placeholder = c.ejemplo;
       input.value = valores[c.id] || "";
       input.oninput = () => { valores[c.id] = input.value; generar(); };
@@ -636,40 +650,39 @@ El equipo de ${d.tienda}`
     $("panelPsa").style.display = visible ? "none" : "block";
   }
 
-  const CAMPOS_PIEZA = [
-    { id: "numeroParte", etiqueta: "Número de parte", ejemplo: "661-00000" },
-    { id: "pieza", etiqueta: "Pieza", ejemplo: "Pantalla" },
-    { id: "cantidad", etiqueta: "Cantidad de unidades", ejemplo: "1" }
-  ];
+  const clavePiezas = t => "piezas_" + t.id;
 
   function piezasLista() {
-    return (valores.solPiezas || [{}]).map(p =>
-      CAMPOS_PIEZA.map(c => `${c.etiqueta}: ${(p[c.id] || "").trim() || `[${c.etiqueta}]`}`).join("\n")
+    const campos = actual.camposPieza;
+    return (valores[clavePiezas(actual)] || [{}]).map(p =>
+      campos.map(c => `${c.etiqueta}: ${(p[c.id] || "").trim() || `[${c.etiqueta}]`}`).join("\n")
     ).join("\n\n");
   }
 
   function renderPiezas() {
-    if (!valores.solPiezas) valores.solPiezas = [{}];
+    const clave = clavePiezas(actual);
+    if (!valores[clave]) valores[clave] = [{}];
     const campos = $("campos");
-    valores.solPiezas.forEach((pieza, i) => {
+    valores[clave].forEach((pieza, i) => {
       const fila = document.createElement("div");
       fila.className = "fila-pieza";
-      CAMPOS_PIEZA.forEach(c => {
+      actual.camposPieza.forEach(c => {
         const label = document.createElement("label");
         label.textContent = c.etiqueta;
         const input = document.createElement("input");
         input.placeholder = c.ejemplo;
+        input.maxLength = 40;
         input.value = pieza[c.id] || "";
         input.oninput = () => { pieza[c.id] = input.value; generar(); };
         label.appendChild(input);
         fila.appendChild(label);
       });
-      if (i === valores.solPiezas.length - 1) {
+      if (i === valores[clave].length - 1) {
         const mas = document.createElement("button");
         mas.className = "boton secundario mas";
         mas.textContent = "+";
         mas.title = "Añadir otra pieza";
-        mas.onclick = () => { valores.solPiezas.push({}); seleccionar(actual); };
+        mas.onclick = () => { valores[clave].push({}); seleccionar(actual); };
         fila.appendChild(mas);
       }
       campos.appendChild(fila);
@@ -684,8 +697,8 @@ El equipo de ${d.tienda}`
     $("descripcion").textContent = t.descripcion;
     const campos = $("campos");
     campos.innerHTML = "";
+    [...(t.interno ? [] : comunes), ...t.campos].forEach(c => campos.appendChild(crearCampo(c)));
     if (t.piezas) renderPiezas();
-    else [...(t.interno ? [] : comunes), ...t.campos].forEach(c => campos.appendChild(crearCampo(c)));
     if (!t.pdf) generar();
     $("pdfAviso").textContent = "";
   }
@@ -769,7 +782,7 @@ El equipo de ${d.tienda}`
   $("copiar").onclick = () => copiar($("mensaje").value);
   $("refrescar").onclick = () => {
     [...(actual.interno ? [] : comunes), ...actual.campos].forEach(c => delete valores[c.id]);
-    delete valores.solPiezas;
+    if (actual.piezas) delete valores[clavePiezas(actual)];
     seleccionar(actual);
   };
 
