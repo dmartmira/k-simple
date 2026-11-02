@@ -62,6 +62,10 @@
   aside details.grupo { margin: 0 0 10px; }
   aside .pie { margin-top: auto; padding: 16px 6px 0; font-size: 12px; opacity: 0.7; }
   aside .grupo { margin-bottom: 10px; }
+  .copiar-rechazo { display: grid; grid-template-columns: 1fr auto; gap: 6px; }
+  .copiar-rechazo select { height: 36px; }
+  .copiar-rechazo .boton { height: 36px; }
+  @media (max-width: 720px) { .copiar-rechazo { grid-template-columns: 1fr; } }
   .casillas { display: grid; gap: 6px; justify-items: start; text-align: left; }
   .casillas label { flex-direction: row; align-items: center; justify-content: flex-start; justify-self: start; text-align: left; gap: 8px; font-size: 14px; color: var(--color-black); }
   .casillas input { width: auto; margin: 0; }
@@ -663,8 +667,15 @@ El equipo de ${d.tienda}`;
       interno: true,
       descripcion: "Tramitación del tercer año de garantía.",
       campos: [
-        { id: "reparacion", etiqueta: "Reparación", ejemplo: "Cambio de batería", ancho: true },
+        { id: "reparacion", etiqueta: "Reparación", ejemplo: "RE1543234", ancho: true },
         { id: "gsx", etiqueta: "GSX", ejemplo: "GSX-0001", ancho: true },
+        { id: "textoRechazo", etiqueta: "Texto de rechazo", tipo: "copiarRechazo", ancho: true, opciones: [
+          { valor: "K-tuin", texto: "K-tuin" },
+          { valor: "Otro vendedor", texto: "Otro vendedor" }
+        ], textos: {
+          "K-tuin": "El dispositivo no cumple los requisitos para optar al tercer año de garantía. Durante el tercer año, la carga de probar la falta de conformidad de origen del producto recae en el cliente y no en el vendedor.",
+          "Otro vendedor": "El dispositivo no cumple los requisitos para optar al tercer año de garantía, se recomienda ponerse en contacto con la empresa donde lo adquirió."
+        } },
         { id: "pruebaCarga", etiqueta: "Prueba de carga anterior a los dos años", opciones: [
           { valor: "Si", texto: "Si" },
           { valor: "No", texto: "No" }
@@ -847,7 +858,26 @@ El equipo de ${d.tienda}`
     if (c.ancho) label.className = "ancho";
     label.textContent = c.etiqueta;
     let input;
-    if (c.tipo === "casillas") {
+    if (c.tipo === "copiarRechazo") {
+      input = document.createElement("div");
+      input.className = "copiar-rechazo";
+      const sel = document.createElement("select");
+      if (valores[c.id] === undefined) valores[c.id] = c.opciones[0].valor;
+      c.opciones.forEach(o => {
+        const op = document.createElement("option");
+        op.value = o.valor;
+        op.textContent = o.texto;
+        sel.appendChild(op);
+      });
+      sel.value = valores[c.id];
+      sel.onchange = () => { valores[c.id] = sel.value; };
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "boton secundario";
+      btn.textContent = "Copiar texto de rechazo";
+      btn.onclick = () => copiar(c.textos[sel.value]);
+      input.append(sel, btn);
+    } else if (c.tipo === "casillas") {
       label.className += " casillas-grupo";
       input = document.createElement("div");
       input.className = "casillas";
