@@ -360,6 +360,17 @@
   .boton.mas { border-radius: 50%; }
   .psa-caducidad { border-radius: 12px; background: rgba(255, 255, 255, 0.06); }
 </style>
+
+<style>
+  aside .sub {
+    font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.45);
+    padding: 8px 12px 4px;
+  }
+</style>
 </head>
 <body>
 
@@ -369,11 +380,10 @@
     <select id="tienda"></select>
   </label>
   <details class="grupo">
-    <summary><span class="gicon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>Clientes</span></summary>
+    <summary><span class="gicon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"/><path d="M9 12h6M9 16h6"/></svg>Plantillas</span></summary>
+    <div class="sub">Clientes</div>
     <nav id="menu"></nav>
-  </details>
-  <details class="grupo">
-    <summary><span class="gicon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"/><path d="M9 12h6M9 16h6"/></svg>Plantillas Internas</span></summary>
+    <div class="sub">Operativas</div>
     <nav id="menuInterno"></nav>
   </details>
   <details class="grupo">
