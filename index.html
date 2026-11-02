@@ -241,6 +241,57 @@
   .boton.mas { border-radius: 50%; }
   .tarjeta textarea { background: transparent; border: 0; border-radius: 0; backdrop-filter: none; -webkit-backdrop-filter: none; }
 </style>
+
+<style>
+  /* ===== MENÚ LATERAL (estilo oscuro tipo panel) ===== */
+  aside {
+    background: #4d4944;
+    color: #f3f1ee;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-right: 0;
+    padding: 20px 12px;
+  }
+  aside h1 { color: #ffffff; font-size: 17px; font-weight: 600; margin: 4px 8px 22px; }
+  aside h1 img.logo { width: 22px; height: 22px; }
+  aside .tienda { color: rgba(255, 255, 255, 0.7); margin: 0 8px 18px; }
+  aside summary {
+    font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.6);
+    padding: 16px 10px 8px;
+    opacity: 1;
+  }
+  aside summary:hover { color: #ffffff; }
+  aside summary .gicon { display: flex; align-items: center; gap: 10px; }
+  aside summary svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  aside summary::after { color: rgba(255, 255, 255, 0.5); }
+  aside button {
+    color: #f3f1ee;
+    font-size: 15px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    margin-bottom: 2px;
+  }
+  aside button:hover { background: rgba(255, 255, 255, 0.06); color: #ffffff; }
+  aside button.activo {
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    font-weight: 500;
+    box-shadow: inset 3px 0 0 #fe7f2d;
+  }
+  aside .pie { color: rgba(255, 255, 255, 0.5); }
+</style>
 </head>
 <body>
 
@@ -250,19 +301,19 @@
     <select id="tienda"></select>
   </label>
   <details class="grupo">
-    <summary>Clientes</summary>
+    <summary><span class="gicon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>Clientes</span></summary>
     <nav id="menu"></nav>
   </details>
   <details class="grupo">
-    <summary>Plantillas Internas</summary>
+    <summary><span class="gicon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"/><path d="M9 12h6M9 16h6"/></svg>Plantillas Internas</span></summary>
     <nav id="menuInterno"></nav>
   </details>
   <details class="grupo">
-    <summary>Impresos</summary>
+    <summary><span class="gicon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V3h10v6"/><rect x="4" y="9" width="16" height="8" rx="2"/><path d="M7 14h10v7H7z"/></svg>Impresos</span></summary>
     <nav id="menuImpresos"></nav>
   </details>
   <details class="grupo">
-    <summary>Herramientas</summary>
+    <summary><span class="gicon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-.5-.5-2.5z"/></svg>Herramientas</span></summary>
     <nav id="menuHerramientas"><button data-id="psa" id="botonPsa">Caducidad PSA</button></nav>
   </details>
   <div class="pie">Desarrollada por DMira · v1.0</div>
