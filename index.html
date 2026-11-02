@@ -362,6 +362,16 @@
 </style>
 
 <style>
+  aside details.sub-grupo { margin: 0 0 4px; }
+  aside details.sub-grupo summary {
+    font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.5);
+    padding: 8px 12px 6px;
+  }
+  aside details.sub-grupo summary:hover { color: #ffffff; }
   aside .sub {
     font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
     font-size: 11px;
@@ -381,10 +391,14 @@
   </label>
   <details class="grupo">
     <summary><span class="gicon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"/><path d="M9 12h6M9 16h6"/></svg>Plantillas</span></summary>
-    <div class="sub">Clientes</div>
-    <nav id="menu"></nav>
-    <div class="sub">Operativas</div>
-    <nav id="menuInterno"></nav>
+    <details class="sub-grupo">
+      <summary>Clientes</summary>
+      <nav id="menu"></nav>
+    </details>
+    <details class="sub-grupo">
+      <summary>Operativas</summary>
+      <nav id="menuInterno"></nav>
+    </details>
   </details>
   <details class="grupo">
     <summary><span class="gicon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V3h10v6"/><rect x="4" y="9" width="16" height="8" rx="2"/><path d="M7 14h10v7H7z"/></svg>Impresos</span></summary>
@@ -1033,7 +1047,9 @@ El equipo de ${d.tienda}`
   document.querySelectorAll("aside details").forEach(d => {
     d.addEventListener("toggle", () => {
       if (!d.open) return;
-      document.querySelectorAll("aside details").forEach(o => { if (o !== d) o.open = false; });
+      document.querySelectorAll("aside details").forEach(o => {
+        if (o !== d && !o.contains(d) && !d.contains(o)) o.open = false;
+      });
     });
   });
 
