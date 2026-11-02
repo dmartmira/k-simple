@@ -62,7 +62,9 @@
   aside details.grupo { margin: 0 0 10px; }
   aside .pie { margin-top: auto; padding: 16px 6px 0; font-size: 12px; opacity: 0.7; }
   aside .grupo { margin-bottom: 10px; }
-  .copiar-rechazo { display: grid; grid-template-columns: 1fr auto; gap: 6px; }
+  .rechazo { margin-top: 10px; }
+  .copiar-rechazo { display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: end; }
+  .copiar-rechazo label { margin: 0; }
   .copiar-rechazo select { height: 36px; }
   .copiar-rechazo .boton { height: 36px; }
   @media (max-width: 720px) { .copiar-rechazo { grid-template-columns: 1fr; } }
@@ -517,6 +519,7 @@
     <button class="boton secundario" id="refrescar">Refrescar</button>
     <span class="aviso" id="aviso"></span>
   </div>
+  <div class="rechazo" id="rechazo" style="display:none"></div>
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -669,13 +672,6 @@ El equipo de ${d.tienda}`;
       campos: [
         { id: "reparacion", etiqueta: "Reparación", ejemplo: "RE1543234", ancho: true },
         { id: "gsx", etiqueta: "GSX", ejemplo: "GSX-0001", ancho: true },
-        { id: "textoRechazo", etiqueta: "Texto de rechazo", tipo: "copiarRechazo", ancho: true, opciones: [
-          { valor: "K-tuin", texto: "K-tuin" },
-          { valor: "Otro vendedor", texto: "Otro vendedor" }
-        ], textos: {
-          "K-tuin": "El dispositivo no cumple los requisitos para optar al tercer año de garantía. Durante el tercer año, la carga de probar la falta de conformidad de origen del producto recae en el cliente y no en el vendedor.",
-          "Otro vendedor": "El dispositivo no cumple los requisitos para optar al tercer año de garantía, se recomienda ponerse en contacto con la empresa donde lo adquirió."
-        } },
         { id: "pruebaCarga", etiqueta: "Prueba de carga anterior a los dos años", opciones: [
           { valor: "Si", texto: "Si" },
           { valor: "No", texto: "No" }
@@ -685,6 +681,17 @@ El equipo de ${d.tienda}`;
         { id: "precioAqua", etiqueta: "Precio AQUA sin IVA (€)", ejemplo: "100" },
         { id: "vendidoPor", etiqueta: "Vendido por", ejemplo: "K-tuin Elche", ancho: true }
       ],
+      rechazo: {
+        etiqueta: "Texto de rechazo",
+        opciones: [
+          { valor: "K-tuin", texto: "K-tuin" },
+          { valor: "Otro vendedor", texto: "Otro vendedor" }
+        ],
+        textos: {
+          "K-tuin": "El dispositivo no cumple los requisitos para optar al tercer año de garantía. Durante el tercer año, la carga de probar la falta de conformidad de origen del producto recae en el cliente y no en el vendedor.",
+          "Otro vendedor": "El dispositivo no cumple los requisitos para optar al tercer año de garantía, se recomienda ponerse en contacto con la empresa donde lo adquirió."
+        }
+      },
       texto: d => `Tramitación del tercer año de garantía
 ------
 Reparación: ${d.reparacion}
@@ -853,31 +860,36 @@ El equipo de ${d.tienda}`
     });
   }
 
+  function crearRechazo(r) {
+    const wrap = document.createElement("div");
+    wrap.className = "copiar-rechazo";
+    const label = document.createElement("label");
+    label.textContent = r.etiqueta;
+    const sel = document.createElement("select");
+    let elegido = r.opciones[0].valor;
+    r.opciones.forEach(o => {
+      const op = document.createElement("option");
+      op.value = o.valor;
+      op.textContent = o.texto;
+      sel.appendChild(op);
+    });
+    sel.value = elegido;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "boton secundario";
+    btn.textContent = "Copiar texto de rechazo";
+    btn.onclick = () => copiar(r.textos[sel.value]);
+    label.appendChild(sel);
+    wrap.append(label, btn);
+    return wrap;
+  }
+
   function crearCampo(c) {
     const label = document.createElement("label");
     if (c.ancho) label.className = "ancho";
     label.textContent = c.etiqueta;
     let input;
-    if (c.tipo === "copiarRechazo") {
-      input = document.createElement("div");
-      input.className = "copiar-rechazo";
-      const sel = document.createElement("select");
-      if (valores[c.id] === undefined) valores[c.id] = c.opciones[0].valor;
-      c.opciones.forEach(o => {
-        const op = document.createElement("option");
-        op.value = o.valor;
-        op.textContent = o.texto;
-        sel.appendChild(op);
-      });
-      sel.value = valores[c.id];
-      sel.onchange = () => { valores[c.id] = sel.value; };
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "boton secundario";
-      btn.textContent = "Copiar texto de rechazo";
-      btn.onclick = () => copiar(c.textos[sel.value]);
-      input.append(sel, btn);
-    } else if (c.tipo === "casillas") {
+    if (c.tipo === "casillas") {
       label.className += " casillas-grupo";
       input = document.createElement("div");
       input.className = "casillas";
@@ -929,6 +941,7 @@ El equipo de ${d.tienda}`
     const pdf = visible && actual.pdf;
     $("campos").style.display = visible ? "" : "none";
     $("acciones").style.display = visible && !pdf ? "" : "none";
+    $("rechazo").style.display = visible && !pdf && actual.rechazo ? "" : "none";
     document.querySelector(".tarjeta").style.display = visible && !pdf ? "" : "none";
     $("panelPdf").style.display = pdf ? "block" : "none";
     $("panelPsa").style.display = visible ? "none" : "block";
@@ -983,6 +996,10 @@ El equipo de ${d.tienda}`
     campos.innerHTML = "";
     [...(t.interno ? [] : comunes), ...t.campos].forEach(c => campos.appendChild(crearCampo(c)));
     if (t.piezas) renderPiezas();
+    const rechazo = $("rechazo");
+    rechazo.innerHTML = "";
+    if (t.rechazo) rechazo.appendChild(crearRechazo(t.rechazo));
+    rechazo.style.display = t.rechazo ? "" : "none";
     if (!t.pdf) generar();
     $("pdfAviso").textContent = "";
   }
