@@ -152,7 +152,9 @@
     padding: 14px;
   }
   .tarjeta textarea { width: 100%; min-height: 300px; border: 0; background: transparent; padding: 0; font-size: 14px; line-height: 1.55; resize: vertical; }
-  .asunto { font-size: 14px; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid var(--color-line); }
+  .asunto { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 14px; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid var(--color-line); }
+  .asunto strong { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+  .asunto .boton { flex: 0 0 auto; }
   .asunto span { opacity: .7; }
   #panelPdf .en-pdf { display: flex; flex-direction: column; align-items: flex-start; text-align: left; margin-bottom: 12px; }
   .tarjeta textarea:focus { outline: none; }
@@ -514,7 +516,7 @@
   </section>
 
   <div class="tarjeta">
-    <div class="asunto"><span>Asunto:</span> <strong id="asunto"></strong></div>
+    <div class="asunto"><span>Asunto:</span> <strong id="asunto"></strong><button class="boton secundario" id="copiarAsunto" type="button">Copiar asunto</button></div>
     <textarea id="mensaje" readonly></textarea>
   </div>
 
@@ -1103,6 +1105,7 @@ El equipo de ${d.tienda}`
     refrescarActual();
   };
   $("refrescar").onclick = refrescarActual;
+  $("copiarAsunto").onclick = () => copiar($("asunto").textContent);
 
   // ===== Caducidad PSA =====
   // Caducidad PSA a partir del número 9D (AASS: año y semana de producción) + 18 meses.
