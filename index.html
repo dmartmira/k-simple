@@ -152,6 +152,9 @@
     padding: 14px;
   }
   .tarjeta textarea { width: 100%; min-height: 300px; border: 0; background: transparent; padding: 0; font-size: 14px; line-height: 1.55; resize: vertical; }
+  .asunto { font-size: 14px; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid var(--color-line); }
+  .asunto span { opacity: .7; }
+  #panelPdf .en-pdf { display: flex; flex-direction: column; align-items: flex-start; text-align: left; margin-bottom: 12px; }
   .tarjeta textarea:focus { outline: none; }
 
   .acciones { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; align-items: center; }
@@ -511,6 +514,7 @@
   </section>
 
   <div class="tarjeta">
+    <div class="asunto"><span>Asunto:</span> <strong id="asunto"></strong></div>
     <textarea id="mensaje" readonly></textarea>
   </div>
 
@@ -996,6 +1000,12 @@ El equipo de ${d.tienda}`
     campos.innerHTML = "";
     [...(t.interno ? [] : comunes), ...t.campos].forEach(c => campos.appendChild(crearCampo(c)));
     if (t.piezas) renderPiezas();
+    const pdfPanel = $("panelPdf");
+    pdfPanel.querySelectorAll(".casillas-grupo").forEach(e => e.remove());
+    if (t.pdf) {
+      const cas = campos.querySelector(".casillas-grupo");
+      if (cas) { cas.classList.add("en-pdf"); pdfPanel.insertBefore(cas, pdfPanel.firstChild); }
+    }
     const rechazo = $("rechazo");
     rechazo.innerHTML = "";
     if (t.rechazo) rechazo.appendChild(crearRechazo(t.rechazo));
@@ -1063,6 +1073,8 @@ El equipo de ${d.tienda}`
     });
     if (!(valores.horario || "").trim() && tienda.horario) d.horario = tienda.horario;
     $("mensaje").value = actual.texto(d);
+    const num = (valores.reparacion || valores.orden || "").trim();
+    $("asunto").textContent = (num ? num + " - " : "") + actual.nombre;
   }
 
   async function copiar(texto) {
@@ -1080,12 +1092,17 @@ El equipo de ${d.tienda}`
     setTimeout(() => $("aviso").textContent = "", 2000);
   }
 
-  $("copiar").onclick = () => copiar($("mensaje").value);
-  $("refrescar").onclick = () => {
+  function refrescarActual() {
     [...(actual.interno ? [] : comunes), ...actual.campos].forEach(c => delete valores[c.id]);
     if (actual.piezas) delete valores[clavePiezas(actual)];
     seleccionar(actual);
+  }
+
+  $("copiar").onclick = async () => {
+    await copiar($("mensaje").value);
+    refrescarActual();
   };
+  $("refrescar").onclick = refrescarActual;
 
   // ===== Caducidad PSA =====
   // Caducidad PSA a partir del número 9D (AASS: año y semana de producción) + 18 meses.
