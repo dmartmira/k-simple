@@ -452,6 +452,118 @@
     main { padding: 12px; }
   }
 </style>
+<style>
+  /* ===== VISTA MINIMALISTA · BLANCO, NEGRO Y GRISES ===== */
+  :root {
+    --m-bg: #ffffff;        /* fondo de la zona de trabajo */
+    --m-side: #f5f5f5;      /* menú lateral */
+    --m-text: #111111;      /* texto principal */
+    --m-muted: #6b6b6b;     /* texto secundario */
+    --m-line: #e2e2e2;      /* bordes finos */
+    --m-hover: #ebebeb;     /* fondo al pasar el ratón */
+    --m-accent: #111111;    /* botón principal y opción activa */
+    --m-on-accent: #ffffff; /* texto sobre el botón principal */
+    --color-black: var(--m-text);
+    --color-muted: var(--m-muted);
+    --color-line: var(--m-line);
+    --color-navy: var(--m-accent);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --m-bg: #111111; --m-side: #181818; --m-text: #f2f2f2; --m-muted: #9a9a9a;
+      --m-line: #2c2c2c; --m-hover: #242424; --m-accent: #f2f2f2; --m-on-accent: #111111;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --m-bg: #111111; --m-side: #181818; --m-text: #f2f2f2; --m-muted: #9a9a9a;
+    --m-line: #2c2c2c; --m-hover: #242424; --m-accent: #f2f2f2; --m-on-accent: #111111;
+    color-scheme: dark;
+  }
+
+  body { background: var(--m-bg); color: var(--m-text); }
+
+  /* Menú lateral */
+  aside {
+    background: var(--m-side);
+    color: var(--m-text);
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+    border-right: 1px solid var(--m-line);
+  }
+  aside h1 { color: var(--m-text); font-weight: 600; letter-spacing: -0.01em; }
+  aside h1 img.logo, aside h1 .logo { filter: grayscale(1); }
+  aside .tienda { color: var(--m-muted); }
+  aside summary, aside details.sub-grupo summary, aside .sub {
+    font-family: var(--font-text);
+    color: var(--m-muted);
+    letter-spacing: 0.06em;
+  }
+  aside summary:hover, aside details.sub-grupo summary:hover { color: var(--m-text); }
+  aside summary::after { color: var(--m-muted); }
+  aside button { color: var(--m-text); border-radius: 6px; }
+  aside button:hover { background: var(--m-hover); color: var(--m-text); }
+  aside button.activo {
+    background: var(--m-accent);
+    color: var(--m-on-accent);
+    box-shadow: none;
+    font-weight: 500;
+  }
+  aside .pie { color: var(--m-muted); opacity: 1; }
+
+  /* Zona de trabajo */
+  main h2 { color: var(--m-text); font-weight: 600; letter-spacing: -0.01em; }
+  .descripcion { color: var(--m-muted); }
+  label { color: var(--m-muted); }
+  input, textarea, select, aside select {
+    color: var(--m-text);
+    background: var(--m-bg);
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+    border: 1px solid var(--m-line);
+    border-radius: 6px;
+  }
+  input::placeholder, textarea::placeholder { color: var(--m-muted); opacity: .7; }
+  input:focus, textarea:focus, select:focus { outline: 1px solid var(--m-text); outline-offset: 0; border-color: var(--m-text); }
+  option { color: var(--m-text); background: var(--m-bg); }
+  input[type=date] { color-scheme: inherit; }
+
+  .tarjeta {
+    background: var(--m-bg);
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+    border: 1px solid var(--m-line);
+    border-radius: 8px;
+    box-shadow: none;
+  }
+  .tarjeta textarea { color: var(--m-text); background: transparent; border: 0; }
+  .asunto { border-bottom: 1px solid var(--m-line); }
+
+  .boton {
+    background: var(--m-accent);
+    color: var(--m-on-accent);
+    border: 1px solid var(--m-accent);
+    border-radius: 6px;
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+    padding: 6px 14px;
+  }
+  .boton:hover { background: var(--m-muted); border-color: var(--m-muted); color: var(--m-on-accent); }
+  .boton.secundario { background: transparent; color: var(--m-text); border: 1px solid var(--m-line); }
+  .boton.secundario:hover { background: var(--m-hover); color: var(--m-text); border-color: var(--m-line); }
+  .boton.mas { border-radius: 50%; padding: 0; }
+  .aviso { color: var(--m-muted); }
+
+  /* Caducidad PSA: estados en escala de grises */
+  .psa-entrada input.error { border-color: var(--m-text); }
+  .psa-pista { color: var(--m-text); }
+  .psa-caducidad { border-radius: 8px; background: transparent; border: 1px solid var(--m-line); }
+  .psa-caducidad.ok { border-left: 4px solid var(--m-line); }
+  .psa-caducidad.aviso-psa { border-left: 4px solid var(--m-muted); }
+  .psa-caducidad.caducado { border-left: 4px solid var(--m-text); background: var(--m-hover); }
+
+  @media (max-width: 720px) {
+    aside { border-right: 0; border-bottom: 1px solid var(--m-line); }
+  }
+</style>
+
 </head>
 <body>
 
